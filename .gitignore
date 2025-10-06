@@ -20,3 +20,18 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+
+node_modules
+__pycache__
+package-lock.json
+.next
+.replit
+uv.lock
+/.claude
+
+ZZ_run_claude.bat
+ZZ_install_claude.bat
+
+# Environment variables with secrets
+.env
+/_old

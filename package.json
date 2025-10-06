@@ -1,0 +1,32 @@
+{
+  "name": "CampusLearn-SEN381",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "fla": "set FLASK_DEBUG=1 && pip install -r requirements.txt && python -m flask --app api/index run -p 5328",
+    "next-dev": "next dev",
+    "dev": "concurrently \"npm run next-dev\" \"npm run flask-dev\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "flask-dev": "cd api && python app.py"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "",
+    "@dnd-kit/sortable": "",
+    "@types/node": "",
+    "@types/react": "",
+    "@types/react-dom": "",
+    "autoprefixer": "",
+    "concurrently": "",
+    "eslint": "",
+    "eslint-config-next": "",
+    "framer-motion": "",
+    "next": "",
+    "postcss": "^8.5.6",
+    "react": "",
+    "react-dom": "",
+    "tailwindcss": "^3.4.17",
+    "typescript": ""
+  }
+}
