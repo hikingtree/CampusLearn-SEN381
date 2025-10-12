@@ -1,18 +1,16 @@
 import './globals.css'
 
-export const metadata = {
-  title: 'CampusLearn',
-  description: 'Campus learning management system',
-}
+import Navbar from "./components/navbar";
+import Footer from "./components/footer";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-background text-text-primary">
+        <Navbar />
+        <main className="min-h-screen">{children}</main>
+        <Footer />
+      </body>
     </html>
-  )
+  );
 }

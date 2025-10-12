@@ -1,6 +1,9 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+/* Root theme variables */
+:root {
   --color-background: #F9FAFB;
   --color-surface: #FFFFFF;
 
@@ -13,4 +16,129 @@
   --color-accent-1: #E4CC7A;
   --color-accent-2: #A9D0B3;
   --color-accent-3: #3A5044;
+
+  --accent: rgba(245, 158, 11, 1);
+  --background: rgba(249, 250, 251, 1);
+  --body-font-family: "Inter", Helvetica, sans-serif;
+  --surface: #FFFFFF;
+  --text-primary: rgba(17, 24, 39, 1);
+  --text-secondary: rgba(107, 114, 128, 1);
+
+  --animate-spin: spin 1s linear infinite;
+}
+
+/* Base element styles */
+@layer base {
+  body {
+    font-family: var(--body-font-family);
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply appearance-none bg-transparent border-0 outline-none;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .all-[unset] {
+    all: unset;
+  }
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fade-in 1s var(--animation-delay, 0s) ease forwards;
+}
+
+.animate-fade-up {
+  animation: fade-up 1s var(--animation-delay, 0s) ease forwards;
+}
+
+.animate-marquee {
+  animation: marquee var(--duration) infinite linear;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration) linear infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 8s infinite;
+}
+
+.animate-spin {
+  animation: var(--animate-spin);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shimmer-width)) 0;
+  }
+  30%, 60% {
+    background-position: calc(100% + var(--shimmer-width)) 0;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-vertical {
+  0% {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
+}
+
+/* Theme variants (optional, for dark/light) */
+[data-themes-mode="light-theme-1"] {
+  --color-background: #FFFFFF;
+  --color-text-primary: #252b42;
+  --color-text-secondary: #737373;
+}
+
+[data-themes-mode="dark-theme"] {
+  --color-background: #252b42;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #ECECEC;
 }

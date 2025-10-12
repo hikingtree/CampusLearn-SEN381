@@ -12,22 +12,28 @@
     "flask-dev": "cd api && python app.py"
   },
   "dependencies": {
-    "@dnd-kit/core": "",
-    "@dnd-kit/sortable": "",
-    "@types/node": "",
-    "@types/react": "",
-    "@types/react-dom": "",
-    "autoprefixer": "",
-    "concurrently": "",
-    "eslint": "",
-    "eslint-config-next": "",
-    "framer-motion": "",
-    "next": "",
-    "postcss": "^8.4.49",
-    "react": "",
-    "react-dom": "",
-    "tailwindcss": "^4.1.14",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@tailwindcss/postcss": "^4.1.14",
-    "typescript": ""
+    "@types/node": "",
+    "axios": "^1.12.2",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.24",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
+    "swr": "^2.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.47.0",
+    "eslint-config-next": "^14.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
   }
 }
