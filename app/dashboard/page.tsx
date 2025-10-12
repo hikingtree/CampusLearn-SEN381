@@ -12,13 +12,12 @@ const DashboardPage: React.FC<{ user: User }> = ({ user }) => {
   return (
     
     <div>
-      <h1>Welcome, {user.name}</h1>
 
       {/* Announcement Box */}
       <div className="announcement-box">
-        {user.role === "tutor" && (
-          <button className="bg-accent-2 px-4 py-2 rounded">New Announcement</button>
-        )}
+        {user?.role === "tutor" && (
+  <button className="bg-accent-2 px-4 py-2 rounded">New Announcement</button>
+)}
       </div>
 
         <div className="p-8">
