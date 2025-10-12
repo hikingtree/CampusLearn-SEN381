@@ -28,13 +28,13 @@ export default function DashboardPage() {
 
         {/* CTA Buttons */}
         <div className="flex gap-6 justify-center">
-          <Link href="/pages/sign-in">
+          <Link href="/auth/login">
             <button className="px-8 py-3 rounded-full font-semibold text-[var(--color-text-primary)] bg-[var(--color-button-primary)] hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg">
               Login
             </button>
           </Link>
 
-          <Link href="/pages/sign-up">
+          <Link href="/auth/signup">
             <button className="px-8 py-3 rounded-full font-semibold text-[var(--color-text-primary)] bg-[var(--color-button-secondary)] hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg">
               Sign Up
             </button>

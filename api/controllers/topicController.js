@@ -1,41 +1,21 @@
+const StudentTopics = require('../models/StudentTopics');
 const Topic = require('../models/Topic');
-const Tutor = require('../models/Tutor');
-const Student = require('../models/Student');
 
-// Create new topic (Tutor)
-exports.createTopic = async (req, res) => {
+exports.subscribeTopic = async (req, res) => {
   try {
-    const { name, description, category, image } = req.body;
-    const tutorId = req.user.id;
+    const studentId = req.user.id;
+    const topicId = req.params.id;
 
-    const topic = await Topic.create({ name, description, category, image, tutorId });
-    res.status(201).json(topic);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+    const topic = await Topic.findByPk(topicId);
+    if (!topic) return res.status(404).json({ message: 'Topic not found' });
 
-// Get all topics or filter by category
-exports.getTopics = async (req, res) => {
-  try {
-    const { category } = req.query;
-    const filter = category ? { category } : {};
-
-    const topics = await Topic.findAll({
-      where: filter,
-      include: [{ model: Tutor, attributes: ['id', 'fullName', 'email'] }]
+    const [subscription, created] = await StudentTopics.findOrCreate({
+      where: { studentId, topicId },
     });
 
-    res.json(topics);
+    res.status(201).json({ subscription, message: created ? 'Subscribed successfully' : 'Already subscribed' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-};
-
-// Subscribe to topic (Student)
-exports.subscribeTopic = async (req, res) => {
-  // You can create a many-to-many relationship between Student & Topic
-  res.status(501).json({ message: 'Subscribe feature not implemented yet' });
 };

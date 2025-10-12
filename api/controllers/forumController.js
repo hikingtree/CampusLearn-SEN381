@@ -1,6 +1,7 @@
 const ForumPost = require('../models/ForumPost');
 const Student = require('../models/Student');
 const Topic = require('../models/Topic');
+const ForumReply = require('../models/ForumReply');
 
 // Create a new forum post
 exports.createPost = async (req, res) => {
@@ -35,8 +36,19 @@ exports.getPosts = async (req, res) => {
   }
 };
 
-// Reply to a post (simple version)
 exports.replyPost = async (req, res) => {
-  // You could implement threaded replies here
-  res.status(501).json({ message: 'Reply feature not implemented yet' });
+  try {
+    const studentId = req.user.id;
+    const postId = req.params.id;
+    const { content } = req.body;
+
+    const post = await ForumPost.findByPk(postId);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const reply = await ForumReply.create({ content, forumPostId: postId, studentId });
+    res.status(201).json(reply);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };

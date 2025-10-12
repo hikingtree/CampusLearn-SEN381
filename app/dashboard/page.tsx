@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import TopDashboard from "./components/TopDashboard";
 import TopicSearch from "./components/TopicSearch";
