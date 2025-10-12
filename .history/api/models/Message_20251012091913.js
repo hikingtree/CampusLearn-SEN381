@@ -38,7 +38,4 @@ const Message = sequelize.define('Message', {
   timestamps: true,
 });
 
-Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
-Message.belongsTo(PrivateThread, { foreignKey: 'threadId', as: 'thread' });
-
 module.exports = Message;
