@@ -11,3 +11,9 @@
 ```bash
 docker-compose up
 ```
+### Database
+
+```bash
+npm install sequelize pg pg-hstore
+npm install dotenv
+```
