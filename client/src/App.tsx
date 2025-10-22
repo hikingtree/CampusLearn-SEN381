@@ -18,6 +18,9 @@ import Forum from "@/pages/Forum";
 import Resources from "@/pages/Resources";
 import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
+//Chatbot 
+import ChatbotPage from "@/pages/Chatbot";
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -99,6 +102,13 @@ function Router() {
         <ProtectedRoute>
           <AuthenticatedLayout>
             <Messages />
+          </AuthenticatedLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/chatbot">
+        <ProtectedRoute>
+          <AuthenticatedLayout>
+            <ChatbotPage />
           </AuthenticatedLayout>
         </ProtectedRoute>
       </Route>

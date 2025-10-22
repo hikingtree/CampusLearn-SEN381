@@ -161,3 +161,55 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type File = typeof files.$inferSelect;
 export type InsertFile = z.infer<typeof insertFileSchema>;
+
+import { jsonb } from "drizzle-orm/pg-core";
+
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
+// ==== Chatbot (Power Automate) persistence ====
+import { pgEnum } from "drizzle-orm/pg-core";
+
+// 1) Role enum for chatbot transcripts
+export const chatRole = pgEnum("chat_role", ["user", "assistant", "system"]);
+
+// 2) Chatbot conversations (separate from human-to-human conversations)
+export const chatConversations = pgTable("chat_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Tie to your existing users table (CampusLearn account)
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("New Chat"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// 3) Chatbot messages
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id")
+    .notNull()
+    .references(() => chatConversations.id, { onDelete: "cascade" }),
+  role: chatRole("role").notNull(), // "user" | "assistant" | "system"
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertChatConversationSchema = z.object({
+  userId: z.string().uuid(),
+  title: z.string().min(1).default("New Chat").optional(),
+});
+
+export const insertChatMessageSchema = z.object({
+  conversationId: z.string().uuid(),
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1),
+});
+
+export type ChatConversation = typeof chatConversations.$inferSelect;
+export type InsertChatConversation = z.infer<typeof insertChatConversationSchema>;
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

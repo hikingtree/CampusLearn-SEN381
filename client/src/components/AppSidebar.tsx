@@ -20,6 +20,7 @@ const menuItems = [
   { title: "Forum", url: "/forum", icon: MessageSquare },
   { title: "Resources", url: "/resources", icon: FileText },
   { title: "Messages", url: "/messages", icon: Users },
+  { title: "Chatbot", url: "/chatbot", icon: MessageSquare },
   { title: "Profile", url: "/profile", icon: User },
 ];
 
