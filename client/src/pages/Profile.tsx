@@ -11,13 +11,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, BookOpen, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/useAuth";
+import type { TopicSubscription, ForumPost, File } from "@shared/schema";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: profileData, isLoading } = useQuery({
     queryKey: ["/api/profile"],
+  });
+
+  const { data: subscriptions = [] } = useQuery<TopicSubscription[]>({
+    queryKey: ["/api/subscriptions"],
+  });
+
+  const { data: forumPosts = [] } = useQuery<ForumPost[]>({
+    queryKey: ["/api/forum/posts"],
+  });
+
+  const { data: userFiles = [] } = useQuery<Array<File & { context: string }>>({
+    queryKey: ["/api/files/user"],
   });
 
   const [formData, setFormData] = useState({
@@ -79,12 +94,10 @@ export default function Profile() {
   }
 
   const profile: any = profileData || {};
-
-  const resources = [
-    { id: "1", name: "Recursion Examples.pdf", type: "PDF", uploadedBy: "Sarah Johnson", date: "2 days ago" },
-    { id: "2", name: "SQL Joins Tutorial.mp4", type: "Video", uploadedBy: "Michael Chen", date: "5 days ago" },
-    { id: "3", name: "React Best Practices.pdf", type: "PDF", uploadedBy: "David Lee", date: "1 week ago" },
-  ];
+  
+  // Calculate stats
+  const userPostCount = forumPosts.filter(post => post.authorId === user?.id).length;
+  const totalSubscriptions = subscriptions.length;
 
   return (
     <div className="space-y-6">
@@ -119,15 +132,15 @@ export default function Profile() {
             <div className="pt-4 border-t space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Topics Subscribed</span>
-                <span className="font-medium">8</span>
+                <span className="font-medium" data-testid="text-subscriptions-count">{totalSubscriptions}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Forum Posts</span>
-                <span className="font-medium">12</span>
+                <span className="font-medium" data-testid="text-posts-count">{userPostCount}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Helpful Answers</span>
-                <span className="font-medium">24</span>
+                <span className="text-muted-foreground">Uploaded Files</span>
+                <span className="font-medium" data-testid="text-files-count">{userFiles.length}</span>
               </div>
             </div>
           </CardContent>
@@ -143,7 +156,7 @@ export default function Profile() {
                 </TabsTrigger>
                 <TabsTrigger value="resources" data-testid="tab-resources">
                   <FileText className="h-4 w-4 mr-2" />
-                  Saved Resources
+                  My Uploads
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
@@ -213,30 +226,41 @@ export default function Profile() {
 
             <TabsContent value="resources">
               <CardContent>
-                <div className="space-y-3">
-                  {resources.map((resource) => (
-                    <div
-                      key={resource.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover-elevate"
-                      data-testid={`resource-${resource.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-muted-foreground" />
+                {userFiles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No files uploaded yet. Share learning materials to help your peers!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {userFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover-elevate"
+                        data-testid={`resource-${file.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{file.fileName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {file.context} • {new Date(file.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{resource.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            By {resource.uploadedBy} • {resource.date}
-                          </p>
-                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => window.open(file.fileUrl, '_blank')}
+                          data-testid={`button-view-${file.id}`}
+                        >
+                          View
+                        </Button>
                       </div>
-                      <Button size="sm" variant="ghost" data-testid={`button-download-${resource.id}`}>
-                        Download
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </TabsContent>
           </Tabs>

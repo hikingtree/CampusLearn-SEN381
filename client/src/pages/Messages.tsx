@@ -5,15 +5,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Paperclip, Search } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Send, Paperclip, Search, Plus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Topic, User } from "@shared/schema";
 
 export default function Messages() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [newConversation, setNewConversation] = useState({
+    tutorId: "",
+    topicId: "",
+  });
   const { toast } = useToast();
 
   // Fetch conversations
@@ -25,6 +48,41 @@ export default function Messages() {
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ["/api/conversations", selectedChat, "messages"],
     enabled: !!selectedChat,
+  });
+
+  // Fetch tutors for new conversation
+  const { data: tutors = [] } = useQuery<User[]>({
+    queryKey: ["/api/tutors"],
+  });
+
+  // Fetch topics for new conversation
+  const { data: topics = [] } = useQuery<Topic[]>({
+    queryKey: ["/api/topics"],
+  });
+
+  // Create conversation mutation
+  const createConversationMutation = useMutation({
+    mutationFn: async (data: { tutorId: string; topicId?: string }) => {
+      const response = await apiRequest("POST", "/api/conversations", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      setSelectedChat(data.id);
+      setIsNewConversationOpen(false);
+      setNewConversation({ tutorId: "", topicId: "" });
+      toast({
+        title: "Conversation Started",
+        description: "You can now message this tutor",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to Start Conversation",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    },
   });
 
   // Send message mutation
@@ -53,6 +111,21 @@ export default function Messages() {
     sendMessageMutation.mutate(messageInput);
   };
 
+  const handleStartConversation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newConversation.tutorId) {
+      toast({
+        title: "Please select a tutor",
+        variant: "destructive",
+      });
+      return;
+    }
+    createConversationMutation.mutate({
+      tutorId: newConversation.tutorId,
+      topicId: newConversation.topicId || undefined,
+    });
+  };
+
   const filteredConversations = (conversations as any[]).filter((conv: any) =>
     searchQuery === "" || 
     conv.tutorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,9 +140,77 @@ export default function Messages() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold" data-testid="text-page-title">Messages</h1>
-        <p className="text-muted-foreground">Connect with your tutors and get personalized help</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Messages</h1>
+          <p className="text-muted-foreground">Connect with your tutors and get personalized help</p>
+        </div>
+        <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-new-conversation">
+              <Plus className="h-4 w-4 mr-2" />
+              New Conversation
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleStartConversation}>
+              <DialogHeader>
+                <DialogTitle>Start New Conversation</DialogTitle>
+                <DialogDescription>
+                  Connect with a peer tutor for personalized help
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tutor-select">Select Tutor</Label>
+                  {tutors.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No tutors available</p>
+                  ) : (
+                    <Select 
+                      value={newConversation.tutorId} 
+                      onValueChange={(value) => setNewConversation({ ...newConversation, tutorId: value })}
+                    >
+                      <SelectTrigger id="tutor-select" data-testid="select-tutor">
+                        <SelectValue placeholder="Choose a tutor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tutors.map((tutor) => (
+                          <SelectItem key={tutor.id} value={tutor.id}>
+                            {tutor.fullName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="topic-select">Topic (Optional)</Label>
+                  <Select 
+                    value={newConversation.topicId} 
+                    onValueChange={(value) => setNewConversation({ ...newConversation, topicId: value })}
+                  >
+                    <SelectTrigger id="topic-select" data-testid="select-topic">
+                      <SelectValue placeholder="Choose a topic (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No specific topic</SelectItem>
+                      {topics.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={createConversationMutation.isPending} data-testid="button-start-conversation">
+                  {createConversationMutation.isPending ? "Starting..." : "Start Conversation"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 h-[calc(100vh-12rem)]">

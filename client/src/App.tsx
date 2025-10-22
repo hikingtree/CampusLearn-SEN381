@@ -15,6 +15,7 @@ import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Topics from "@/pages/Topics";
 import Forum from "@/pages/Forum";
+import Resources from "@/pages/Resources";
 import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
 
@@ -84,6 +85,13 @@ function Router() {
         <ProtectedRoute>
           <AuthenticatedLayout>
             <Forum />
+          </AuthenticatedLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/resources">
+        <ProtectedRoute>
+          <AuthenticatedLayout>
+            <Resources />
           </AuthenticatedLayout>
         </ProtectedRoute>
       </Route>

@@ -34,6 +34,7 @@ export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
 
@@ -77,6 +78,7 @@ export interface IStorage {
   // Files
   createFile(file: InsertFile): Promise<File>;
   getFile(id: string): Promise<File | undefined>;
+  getAllFiles(): Promise<File[]>;
   getTopicFiles(topicId: string): Promise<File[]>;
   getConversationFiles(conversationId: string): Promise<File[]>;
 }
@@ -105,6 +107,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   // Topics
@@ -284,6 +290,10 @@ export class DatabaseStorage implements IStorage {
   async getFile(id: string): Promise<File | undefined> {
     const result = await db.select().from(files).where(eq(files.id, id));
     return result[0];
+  }
+
+  async getAllFiles(): Promise<File[]> {
+    return await db.select().from(files).orderBy(desc(files.createdAt));
   }
 
   async getTopicFiles(topicId: string): Promise<File[]> {

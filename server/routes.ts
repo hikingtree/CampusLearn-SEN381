@@ -569,6 +569,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all files with uploader information
+  app.get("/api/files", requireAuth, async (req, res) => {
+    try {
+      const files = await storage.getAllFiles();
+      
+      const enrichedFiles = await Promise.all(
+        files.map(async (file) => {
+          const uploader = await storage.getUser(file.uploaderId);
+          return {
+            ...file,
+            uploaderName: uploader?.fullName || "Unknown",
+          };
+        })
+      );
+
+      res.json(enrichedFiles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch files" });
+    }
+  });
+
+  // Get user's uploaded files
+  app.get("/api/files/user", requireAuth, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+      const allFiles = await storage.getAllFiles();
+      const userFiles = allFiles.filter(f => f.uploaderId === authReq.user!.id);
+      
+      const enrichedFiles = await Promise.all(
+        userFiles.map(async (file) => {
+          let context = "";
+          if (file.topicId) {
+            const topic = await storage.getTopic(file.topicId);
+            context = `Topic: ${topic?.title || "Unknown"}`;
+          } else if (file.conversationId) {
+            context = "Conversation";
+          }
+          return {
+            ...file,
+            context,
+          };
+        })
+      );
+
+      res.json(enrichedFiles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user files" });
+    }
+  });
+
+  // Get all tutors
+  app.get("/api/tutors", requireAuth, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const tutors = allUsers.filter(u => u.isTutor);
+      const tutorsWithoutPassword = tutors.map(({ password, ...rest }) => rest);
+      res.json(tutorsWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tutors" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

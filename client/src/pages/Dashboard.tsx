@@ -1,12 +1,50 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, MessageSquare, Users, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/useAuth";
+import type { Topic, TopicSubscription, ForumPost, Conversation } from "@shared/schema";
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
+  const { data: topics = [] } = useQuery<Topic[]>({
+    queryKey: ["/api/topics"],
+  });
+
+  const { data: subscriptions = [] } = useQuery<TopicSubscription[]>({
+    queryKey: ["/api/subscriptions"],
+  });
+
+  const { data: forumPosts = [] } = useQuery<ForumPost[]>({
+    queryKey: ["/api/forum/posts"],
+  });
+
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ["/api/conversations"],
+  });
+
+  // Calculate stats
+  const totalTopics = topics.length;
+  const totalForumPosts = forumPosts.length;
+  const totalSubscriptions = subscriptions.length;
+  const totalConversations = conversations.length;
+
+  // Get recent subscriptions
+  const recentSubscriptions = subscriptions
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  // Get user's recent forum posts
+  const userForumPosts = forumPosts
+    .filter(post => post.authorId === user?.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
+
   const stats = [
-    { title: "Active Topics", value: "12", icon: BookOpen, change: "+3 this week" },
-    { title: "Forum Posts", value: "45", icon: MessageSquare, change: "+8 today" },
-    { title: "Subscriptions", value: "8", icon: Users, change: "2 new tutors" },
-    { title: "Messages", value: "24", icon: TrendingUp, change: "5 unread" },
+    { title: "Active Topics", value: totalTopics.toString(), icon: BookOpen, change: `${subscriptions.length} subscribed` },
+    { title: "Forum Posts", value: totalForumPosts.toString(), icon: MessageSquare, change: `${userForumPosts.length} by you` },
+    { title: "Subscriptions", value: totalSubscriptions.toString(), icon: Users, change: "Your topics" },
+    { title: "Conversations", value: totalConversations.toString(), icon: TrendingUp, change: "Active chats" },
   ];
 
   return (
@@ -34,41 +72,50 @@ export default function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest learning interactions</CardDescription>
+            <CardTitle>Recent Subscriptions</CardTitle>
+            <CardDescription>Topics you recently joined</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { action: "New message from tutor", subject: "Advanced Programming", time: "2h ago" },
-              { action: "Reply on forum post", subject: "Database Design Help", time: "5h ago" },
-              { action: "Subscribed to topic", subject: "Web Development Basics", time: "1d ago" },
-            ].map((activity, i) => (
-              <div key={i} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
-                <p className="text-sm font-medium">{activity.action}</p>
-                <p className="text-sm text-muted-foreground">{activity.subject}</p>
-                <p className="text-xs text-muted-foreground">{activity.time}</p>
-              </div>
-            ))}
+            {recentSubscriptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No subscriptions yet. Browse topics to get started!</p>
+            ) : (
+              recentSubscriptions.map((subscription) => {
+                const topic = topics.find(t => t.id === subscription.topicId);
+                if (!topic) return null;
+                
+                return (
+                  <div key={subscription.id} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
+                    <p className="text-sm font-medium">{topic.title}</p>
+                    <p className="text-sm text-muted-foreground">{topic.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(subscription.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming Sessions</CardTitle>
-            <CardDescription>Scheduled tutoring sessions</CardDescription>
+            <CardTitle>Your Recent Posts</CardTitle>
+            <CardDescription>Forum discussions you started</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { tutor: "Sarah Johnson", topic: "Data Structures", time: "Today, 3:00 PM" },
-              { tutor: "Michael Chen", topic: "Software Engineering", time: "Tomorrow, 10:00 AM" },
-              { tutor: "Emma Williams", topic: "Business Analytics", time: "Friday, 2:00 PM" },
-            ].map((session, i) => (
-              <div key={i} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
-                <p className="text-sm font-medium">{session.topic}</p>
-                <p className="text-sm text-muted-foreground">with {session.tutor}</p>
-                <p className="text-xs text-muted-foreground">{session.time}</p>
-              </div>
-            ))}
+            {userForumPosts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No forum posts yet. Start a discussion!</p>
+            ) : (
+              userForumPosts.map((post) => (
+                <div key={post.id} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
+                  <p className="text-sm font-medium">{post.title}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

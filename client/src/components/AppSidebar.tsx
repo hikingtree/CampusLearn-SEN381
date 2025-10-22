@@ -1,4 +1,4 @@
-import { Home, MessageSquare, BookOpen, Users, User, LogOut } from "lucide-react";
+import { Home, MessageSquare, BookOpen, Users, User, LogOut, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Topics", url: "/topics", icon: BookOpen },
   { title: "Forum", url: "/forum", icon: MessageSquare },
+  { title: "Resources", url: "/resources", icon: FileText },
   { title: "Messages", url: "/messages", icon: Users },
   { title: "Profile", url: "/profile", icon: User },
 ];
