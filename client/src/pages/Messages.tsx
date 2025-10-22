@@ -122,7 +122,7 @@ export default function Messages() {
     }
     createConversationMutation.mutate({
       tutorId: newConversation.tutorId,
-      topicId: newConversation.topicId || undefined,
+      topicId: newConversation.topicId && newConversation.topicId !== "none" ? newConversation.topicId : undefined,
     });
   };
 
@@ -193,7 +193,7 @@ export default function Messages() {
                       <SelectValue placeholder="Choose a topic (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific topic</SelectItem>
+                      <SelectItem value="none">No specific topic</SelectItem>
                       {topics.map((topic) => (
                         <SelectItem key={topic.id} value={topic.id}>
                           {topic.title}

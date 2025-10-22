@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
@@ -62,10 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Serve uploaded files
-  app.use("/api/files", requireAuth, (req, res, next) => {
-    const express = require("express");
-    express.static(uploadDir)(req, res, next);
-  });
+  app.use("/uploads", express.static(uploadDir));
 
   // Auth Routes
   app.post("/api/auth/register", async (req, res) => {
@@ -301,6 +299,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: "Failed to toggle subscription" });
+    }
+  });
+
+  app.get("/api/subscriptions", requireAuth, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+      const subscriptions = await storage.getUserSubscriptions(authReq.user!.id);
+      res.json(subscriptions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch subscriptions" });
     }
   });
 
