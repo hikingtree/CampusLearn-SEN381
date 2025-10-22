@@ -48,7 +48,7 @@ export function FileUpload({ topicId, conversationId, onUploadComplete }: FileUp
         formData.append("conversationId", conversationId);
       }
 
-      const response = await fetch("/api/files/upload", {
+      const response = await fetch("/api/upload", {
         method: "POST",
         credentials: "include",
         body: formData,

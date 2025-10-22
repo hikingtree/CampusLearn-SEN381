@@ -13,12 +13,10 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { mkdirSync } from "fs";
-//-------
 import { requireChatApiKey } from "./middleware/apiKey.ts";
 import { db } from "./db";
 import { chatConversations, chatMessages } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-
 
 const PgSession = ConnectPgSimple(session);
 
@@ -49,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // On Replit, external URLs use HTTPS, so we need secure cookies even in development
   const isReplit = !!process.env.REPLIT_DOMAINS;
   const isProduction = process.env.NODE_ENV === "production";
-
+  
   app.use(
     session({
       store: new PgSession({
@@ -75,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
-
+      
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
@@ -84,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-
+      
       // Create user
       const user = await storage.createUser({
         ...validatedData,
@@ -93,14 +91,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set session and save explicitly
       req.session.userId = user.id;
-
+      
       // Explicitly save session before responding
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
-
+        
         res.json({
           id: user.id,
           email: user.email,
@@ -147,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Session save error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
-
+        
         res.json({
           id: user.id,
           email: user.email,
@@ -228,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/topics", requireAuth, async (req, res) => {
     try {
       const topics = await storage.getAllTopics();
-
+      
       // Enrich topics with subscriber count and subscription status
       const enrichedTopics = await Promise.all(
         topics.map(async (topic) => {
@@ -237,10 +235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             topic.id,
             (req as AuthRequest).user!.id
           );
-
+          
           // Get creator info
           const creator = await storage.getUser(topic.creatorId);
-
+          
           return {
             ...topic,
             subscriberCount: subscribers.length,
@@ -285,14 +283,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authReq = req as AuthRequest;
     try {
       const topicId = req.params.id;
-
+      
       const topic = await storage.getTopic(topicId);
       if (!topic) {
         return res.status(404).json({ message: "Topic not found" });
       }
 
       const isSubscribed = await storage.isUserSubscribed(topicId, authReq.user!.id);
-
+      
       if (isSubscribed) {
         await storage.unsubscribeTopic(topicId, authReq.user!.id);
         res.json({ subscribed: false });
@@ -340,7 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/forum/posts", requireAuth, async (req, res) => {
     try {
       const posts = await storage.getAllForumPosts();
-
+      
       // Enrich posts with author info, upvote count, and reply count
       const enrichedPosts = await Promise.all(
         posts.map(async (post) => {
@@ -372,14 +370,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authReq = req as AuthRequest;
     try {
       const postId = req.params.id;
-
+      
       const post = await storage.getForumPost(postId);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
 
       const hasUpvoted = await storage.hasUserUpvoted(postId, authReq.user!.id);
-
+      
       if (hasUpvoted) {
         await storage.removeUpvote(postId, authReq.user!.id);
         res.json({ upvoted: false });
@@ -417,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/forum/posts/:id/replies", requireAuth, async (req, res) => {
     try {
       const replies = await storage.getForumReplies(req.params.id);
-
+      
       const enrichedReplies = await Promise.all(
         replies.map(async (reply) => {
           const author = await storage.getUser(reply.authorId);
@@ -439,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authReq = req as AuthRequest;
     try {
       const conversations = await storage.getUserConversations(authReq.user!.id);
-
+      
       const enrichedConversations = await Promise.all(
         conversations.map(async (conv) => {
           const student = await storage.getUser(conv.studentId);
@@ -470,12 +468,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/conversations", requireAuth, async (req, res) => {
     const authReq = req as AuthRequest;
     try {
-      const conversationData = insertConversationSchema.parse(req.body);
-
+      // If studentId is not provided, assume current user is the student
+      const conversationData = insertConversationSchema.parse({
+        studentId: authReq.user!.id,
+        ...req.body,
+      });
+      
       // Validate that one party is the current user
-      if (conversationData.studentId !== authReq.user!.id &&
-        conversationData.tutorId !== authReq.user!.id) {
+      if (conversationData.studentId !== authReq.user!.id && 
+          conversationData.tutorId !== authReq.user!.id) {
         return res.status(403).json({ message: "Cannot create conversation for other users" });
+      }
+
+      // Validate that the tutor is actually a tutor
+      const tutor = await storage.getUser(conversationData.tutorId);
+      if (!tutor || !tutor.isTutor) {
+        return res.status(400).json({ message: "Selected user is not a tutor" });
       }
 
       const conversation = await storage.createConversation(conversationData);
@@ -497,8 +505,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify user is part of this conversation
-      if (conversation.studentId !== authReq.user!.id &&
-        conversation.tutorId !== authReq.user!.id) {
+      if (conversation.studentId !== authReq.user!.id && 
+          conversation.tutorId !== authReq.user!.id) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -518,8 +526,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify user is part of this conversation
-      if (conversation.studentId !== authReq.user!.id &&
-        conversation.tutorId !== authReq.user!.id) {
+      if (conversation.studentId !== authReq.user!.id && 
+          conversation.tutorId !== authReq.user!.id) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -566,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/topics/:id/files", requireAuth, async (req, res) => {
     try {
       const files = await storage.getTopicFiles(req.params.id);
-
+      
       const enrichedFiles = await Promise.all(
         files.map(async (file) => {
           const uploader = await storage.getUser(file.uploaderId);
@@ -587,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/files", requireAuth, async (req, res) => {
     try {
       const files = await storage.getAllFiles();
-
+      
       const enrichedFiles = await Promise.all(
         files.map(async (file) => {
           const uploader = await storage.getUser(file.uploaderId);
@@ -610,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allFiles = await storage.getAllFiles();
       const userFiles = allFiles.filter(f => f.uploaderId === authReq.user!.id);
-
+      
       const enrichedFiles = await Promise.all(
         userFiles.map(async (file) => {
           let context = "";
@@ -644,8 +652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch tutors" });
     }
   });
-
-  // --- Chatbot embed URL endpoint ---
+  
+   // --- Chatbot embed URL endpoint ---
   app.get("/api/chatbot/embed-url", (req, res) => {
     const url = process.env.CHATBOT_IFRAME_URL ?? "";
     if (!url) return res.status(500).json({ error: "CHATBOT_IFRAME_URL not set" });
